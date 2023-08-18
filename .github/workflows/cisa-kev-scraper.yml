@@ -1,0 +1,31 @@
+name: CISA KEV Catalog Scraper
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '30 23 * * *'
+
+jobs:
+  scheduled:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+
+    - name: Scrape CISA KEV CSV Catalog
+      run: curl --silent --output csv/$(date -I)-cisa-kev.csv https://www.cisa.gov/sites/default/files/csv/known_exploited_vulnerabilities.csv
+
+    - name: Scrape CISA KEV JSON Catalog
+      run: curl --silent --output json/$(date -I)-cisa-kev.json https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json
+    
+    - name: Commit and push if it changed
+      run: |-
+        git config user.name "Automated"
+        git config user.email "actions@users.noreply.github.com"
+        git add -A
+        timestamp=$(date -u)
+        git commit -m "Pull latest catalogs: ${timestamp}" || exit 0
+        git push
